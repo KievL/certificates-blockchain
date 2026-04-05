@@ -2,10 +2,10 @@ x-node-template: &node-common
   build:
     context: ./node
   environment:
-    - KAFKA_BROKER=kafka:29092
-    - TOTAL_NODES=3
-    - TRANSACTIONS_TOPIC=transactions
-    - BLOCKS_TOPIC=blocks
+    - KAFKA_BROKER=${KAFKA_BROKER}
+    - TOTAL_NODES=${TOTAL_NODES}
+    - TRANSACTIONS_TOPIC=${TRANSACTIONS_TOPIC}
+    - BLOCKS_TOPIC=${BLOCKS_TOPIC}
   depends_on:
     - kafka
 
