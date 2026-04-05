@@ -1,0 +1,36 @@
+# Exclude Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Exclude testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exclude IDE settings
+.vscode/
+.idea/
+
+# Exclude OS-specific files
+.DS_Store
+Thumbs.db
+
+# Exclude Git files
+.git/
+.gitignore
+
+# Exclude Docker files
+Dockerfile
+.dockerignore
+
+# Exclude documentation
+README.md
+LICENSE
+
+# AI Assistant
+.gemini/
