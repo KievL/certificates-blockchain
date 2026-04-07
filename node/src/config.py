@@ -7,8 +7,12 @@ class Settings(BaseSettings):
     KAFKA_BROKER: str
     NODE_NUMBER: str
     TOTAL_NODES: int
-    TRANSACTIONS_TOPIC: str
-    BLOCKS_TOPIC: str
+    TRANSACTIONS_TOPIC: str = "transactions"
+    MINING_JOBS_TOPIC: str = "mining_jobs"
+    FOUND_BLOCKS_TOPIC: str = "found_blocks"
+    BATCH_SIZE: int = 3
+    MINING_TIMEOUT_SECONDS: float = 30.0
+    JITTER_MAX_SECONDS: float = 5.0
 
     @property
     def NODE_ID(self) -> str:

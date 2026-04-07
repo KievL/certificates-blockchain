@@ -1,22 +1,22 @@
 import json
 from aiokafka import AIOKafkaConsumer
-from src.ports.events.base_consumer import IBaseConsumer
+from src.ports.events.consumers.base_consumer import IBaseConsumer
 
 import asyncio
 import logging
 from aiokafka.errors import KafkaConnectionError
+from abc import abstractmethod
 
 
 class BaseKafkaConsumer(IBaseConsumer):
-    def __init__(self, bootstrap_servers: str, topic: str, group_id: str):
+    def __init__(self, bootstrap_servers: str, group_id: str, topic: str):
         self.bootstrap_servers = bootstrap_servers
-        self.topic = topic
         self.group_id = group_id
+        self.topic = topic
         self.consumer = None
         self.is_running = False
 
     async def start(self):
-
         self.consumer = AIOKafkaConsumer(
             self.topic,
             bootstrap_servers=self.bootstrap_servers,
@@ -52,5 +52,5 @@ class BaseKafkaConsumer(IBaseConsumer):
         if self.consumer:
             await self.consumer.stop()
 
-    async def process_message(self, data: dict):
-        raise NotImplementedError("Subclasses must implement process_message")
+    @abstractmethod
+    async def process_message(self, data: dict) -> None: ...

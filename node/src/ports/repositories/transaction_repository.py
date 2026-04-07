@@ -3,7 +3,7 @@ from src.domain import Transaction
 
 
 class ITransactionRepository(ABC):
-    mempool: list[Transaction]
+    _mempool: list[Transaction]
 
     @abstractmethod
     def add(self, transaction: Transaction) -> None:

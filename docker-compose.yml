@@ -1,11 +1,12 @@
 x-node-template: &node-common
   build:
     context: ./node
-  environment:
-    - KAFKA_BROKER=${KAFKA_BROKER}
-    - TOTAL_NODES=${TOTAL_NODES}
-    - TRANSACTIONS_TOPIC=${TRANSACTIONS_TOPIC}
-    - BLOCKS_TOPIC=${BLOCKS_TOPIC}
+  depends_on:
+    - kafka
+
+x-miner-template: &miner-common
+  build:
+    context: ./miner
   depends_on:
     - kafka
 
@@ -42,16 +43,64 @@ services:
     <<: *node-common
     ports: ["8001:8000"]
     environment:
+      - KAFKA_BROKER=${KAFKA_BROKER}
+      - TOTAL_NODES=${TOTAL_NODES}
+      - TRANSACTIONS_TOPIC=${TRANSACTIONS_TOPIC:-transactions}
+      - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+      - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+      - BATCH_SIZE=${BATCH_SIZE:-3}
+      - MINING_TIMEOUT_SECONDS=${MINING_TIMEOUT_SECONDS:-30}
+      - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
       - NODE_NUMBER=1
 
   node2:
     <<: *node-common
     ports: ["8002:8000"]
     environment:
+      - KAFKA_BROKER=${KAFKA_BROKER}
+      - TOTAL_NODES=${TOTAL_NODES}
+      - TRANSACTIONS_TOPIC=${TRANSACTIONS_TOPIC:-transactions}
+      - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+      - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+      - BATCH_SIZE=${BATCH_SIZE:-3}
+      - MINING_TIMEOUT_SECONDS=${MINING_TIMEOUT_SECONDS:-30}
+      - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
       - NODE_NUMBER=2
 
   node3:
     <<: *node-common
     ports: ["8003:8000"]
     environment:
+      - KAFKA_BROKER=${KAFKA_BROKER}
+      - TOTAL_NODES=${TOTAL_NODES}
+      - TRANSACTIONS_TOPIC=${TRANSACTIONS_TOPIC:-transactions}
+      - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+      - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+      - BATCH_SIZE=${BATCH_SIZE:-3}
+      - MINING_TIMEOUT_SECONDS=${MINING_TIMEOUT_SECONDS:-30}
+      - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
       - NODE_NUMBER=3
+
+  # miner1:
+  #   <<: *miner-common
+  #   environment:
+  #     - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
+  #     - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+  #     - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+  #     - NODE_NUMBER=1
+
+  # miner2:
+  #   <<: *miner-common
+  #   environment:
+  #     - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
+  #     - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+  #     - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+  #     - NODE_NUMBER=2
+
+  # miner3:
+  #   <<: *miner-common
+  #   environment:
+  #     - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
+  #     - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+  #     - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+  #     - NODE_NUMBER=3

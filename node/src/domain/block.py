@@ -4,7 +4,9 @@ from src.domain import Transaction
 
 
 class Block(BaseModel):
+    index: int
     timestamp: datetime
     transactions: list[Transaction]
     previous_hash: str
-    hash: str
+    nonce: int = 0
+    hash: str = ""

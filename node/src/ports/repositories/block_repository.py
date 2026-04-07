@@ -3,6 +3,8 @@ from src.domain import Block
 
 
 class IBlockRepository(ABC):
+    _blocks: list[Block]
+
     @abstractmethod
     def add(self, block: Block) -> None:
         pass
