@@ -81,26 +81,29 @@ services:
       - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
       - NODE_NUMBER=3
 
-  # miner1:
-  #   <<: *miner-common
-  #   environment:
-  #     - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
-  #     - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
-  #     - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
-  #     - NODE_NUMBER=1
+  miner1:
+    <<: *miner-common
+    environment:
+      - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
+      - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+      - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+      - DIFFICULTY=${DIFFICULTY:-4}
+      - NODE_NUMBER=1
 
-  # miner2:
-  #   <<: *miner-common
-  #   environment:
-  #     - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
-  #     - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
-  #     - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
-  #     - NODE_NUMBER=2
+  miner2:
+    <<: *miner-common
+    environment:
+      - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
+      - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+      - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+      - DIFFICULTY=${DIFFICULTY:-4}
+      - NODE_NUMBER=2
 
-  # miner3:
-  #   <<: *miner-common
-  #   environment:
-  #     - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
-  #     - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
-  #     - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
-  #     - NODE_NUMBER=3
+  miner3:
+    <<: *miner-common
+    environment:
+      - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
+      - MINING_JOBS_TOPIC=${MINING_JOBS_TOPIC:-mining_jobs}
+      - FOUND_BLOCKS_TOPIC=${FOUND_BLOCKS_TOPIC:-found_blocks}
+      - DIFFICULTY=${DIFFICULTY:-4}
+      - NODE_NUMBER=3
