@@ -51,7 +51,9 @@ services:
       - BATCH_SIZE=${BATCH_SIZE:-3}
       - MINING_TIMEOUT_SECONDS=${MINING_TIMEOUT_SECONDS:-30}
       - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
+      - DIFFICULTY=${DIFFICULTY:-4}
       - NODE_NUMBER=1
+      - PUBLIC_KEY=${PUBLIC_KEY}
 
   node2:
     <<: *node-common
@@ -65,7 +67,9 @@ services:
       - BATCH_SIZE=${BATCH_SIZE:-3}
       - MINING_TIMEOUT_SECONDS=${MINING_TIMEOUT_SECONDS:-30}
       - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
+      - DIFFICULTY=${DIFFICULTY:-4}
       - NODE_NUMBER=2
+      - PUBLIC_KEY=${PUBLIC_KEY}
 
   node3:
     <<: *node-common
@@ -79,7 +83,9 @@ services:
       - BATCH_SIZE=${BATCH_SIZE:-3}
       - MINING_TIMEOUT_SECONDS=${MINING_TIMEOUT_SECONDS:-30}
       - JITTER_MAX_SECONDS=${JITTER_MAX_SECONDS:-5}
+      - DIFFICULTY=${DIFFICULTY:-4}
       - NODE_NUMBER=3
+      - PUBLIC_KEY=${PUBLIC_KEY}
 
   miner1:
     <<: *miner-common

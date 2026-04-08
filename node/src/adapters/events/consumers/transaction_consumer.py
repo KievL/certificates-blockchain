@@ -13,8 +13,11 @@ class TransactionConsumer(BaseKafkaConsumer):
         bootstrap_servers: str,
         group_id: str,
         topic: str,
+        public_key: str,
     ):
-        self.use_case = ReceiveTransaction(repository=transaction_repository)
+        self.use_case = ReceiveTransaction(
+            repository=transaction_repository, public_key=public_key
+        )
         self.mining_job_service = mining_job_service
         super().__init__(bootstrap_servers, group_id, topic)
 

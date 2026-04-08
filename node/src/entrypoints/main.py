@@ -3,6 +3,10 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
 from src.entrypoints.schemas import TransactionRequest
 from src.domain import Transaction, Block
 from src.config import settings
@@ -21,14 +25,13 @@ from src.adapters.events.consumers.transaction_consumer import TransactionConsum
 from src.adapters.events.consumers.block_consumer import BlockConsumer
 from src.adapters.events.consumers.mining_block_consumer import MiningBlockConsumer
 
+from src.adapters.http_node_client import HttpNodeClient
+
 from src.use_cases.upload_transaction import UploadTransaction
 from src.use_cases.list_blocks import ListBlocks
 from src.use_cases.list_transactions import ListTransactions
 from src.use_cases.mining_job_service import MiningJobService
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
 
 
 transaction_repository = TransactionInMemoryRepository()
@@ -38,6 +41,8 @@ mining_block_repository = MiningBlockInMemoryRepository()
 publisher = BaseKafkaPublisher(bootstrap_servers=settings.KAFKA_BROKER)
 
 job_manager = AsyncIOJobManager()
+
+node_client = HttpNodeClient()
 
 mining_job_service = MiningJobService(
     transaction_repository=transaction_repository,
@@ -66,6 +71,7 @@ transaction_consumer = TransactionConsumer(
     bootstrap_servers=settings.KAFKA_BROKER,
     topic=settings.TRANSACTIONS_TOPIC,
     group_id=settings.NODE_ID,
+    public_key=settings.PUBLIC_KEY,
 )
 
 mining_block_consumer = MiningBlockConsumer(
@@ -78,6 +84,11 @@ mining_block_consumer = MiningBlockConsumer(
 block_consumer = BlockConsumer(
     block_repository=block_repository,
     transaction_repository=transaction_repository,
+    mining_block_repository=mining_block_repository,
+    node_client=node_client,
+    peer_urls=settings.PEER_URLS,
+    difficulty=settings.DIFFICULTY,
+    public_key=settings.PUBLIC_KEY,
     bootstrap_servers=settings.KAFKA_BROKER,
     topic=settings.FOUND_BLOCKS_TOPIC,
     group_id=settings.NODE_ID,

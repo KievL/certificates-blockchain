@@ -23,7 +23,7 @@ class TransactionInMemoryRepository(ITransactionRepository):
 
     def remove(self, id: str) -> None:
         for tx in self._mempool:
-            if str(tx.id) == id:
+            if tx.id == id:
                 self._mempool.remove(tx)
                 return
         raise ValueError("Transaction not found")

@@ -12,3 +12,8 @@ class IMiningBlockRepository(ABC):
     @abstractmethod
     def list(self) -> list[MiningBlock]:
         pass
+
+    @abstractmethod
+    def clear(self) -> None:
+        """Remove all mining blocks."""
+        pass

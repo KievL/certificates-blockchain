@@ -34,7 +34,6 @@ class MiningService:
         self.difficulty = difficulty
         self.miner_id = miner_id
 
-        self._last_block_hash: str = "0"
         self._cancel_event = asyncio.Event()
         self._current_task: asyncio.Task | None = None
         self._current_mining_block: MiningBlock | None = None
@@ -61,8 +60,6 @@ class MiningService:
             f"Block found by network: index={block.index}, "
             f"hash={block.hash[:8]}..., nonce={block.nonce}"
         )
-
-        self._last_block_hash = block.hash
 
         if self._current_mining_block is not None:
             if self._current_mining_block.index == block.index:
@@ -104,7 +101,6 @@ class MiningService:
                     )
 
                     await self.publisher.publish(found_block, self.found_blocks_topic)
-                    self._last_block_hash = hash_hex
                     self._current_mining_block = None
                     return
 

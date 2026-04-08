@@ -13,3 +13,7 @@ class MiningBlockInMemoryRepository(IMiningBlockRepository):
 
     def list(self) -> list[MiningBlock]:
         return self._mining_blocks
+
+    def clear(self) -> None:
+        self._mining_blocks.clear()
+

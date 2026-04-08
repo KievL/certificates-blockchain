@@ -13,10 +13,22 @@ class Settings(BaseSettings):
     BATCH_SIZE: int = 3
     MINING_TIMEOUT_SECONDS: float = 30.0
     JITTER_MAX_SECONDS: float = 5.0
+    DIFFICULTY: int = 4
+    PUBLIC_KEY: str
 
     @property
     def NODE_ID(self) -> str:
         return f"node{self.NODE_NUMBER}"
+
+    @property
+    def NODE_URLS(self) -> list[str]:
+        """URLs for all nodes based on TOTAL_NODES."""
+        return [f"http://node{i}:8000" for i in range(1, self.TOTAL_NODES + 1)]
+
+    @property
+    def PEER_URLS(self) -> list[str]:
+        """URLs of other nodes (excluding the current one)."""
+        return [url for url in self.NODE_URLS if f"node{self.NODE_NUMBER}" not in url]
 
 
 settings = Settings()

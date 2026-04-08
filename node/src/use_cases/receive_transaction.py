@@ -3,8 +3,9 @@ from src.ports.repositories import ITransactionRepository
 
 
 class ReceiveTransaction:
-    def __init__(self, repository: ITransactionRepository):
+    def __init__(self, repository: ITransactionRepository, public_key: str):
         self.repository = repository
+        self.public_key = public_key
 
     def execute(self, transaction: Transaction) -> None:
         try:
