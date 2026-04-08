@@ -228,42 +228,97 @@ with tab2:
                     with st.spinner(f"Broadcasting to {target_node}..."):
                         result = send_transaction(node_url, tx_dict)
 
-# --- TAB 3: SIMULATE BLOCK ---
+# --- TAB 3: SIMULATE ATTACK ---
 with tab3:
-    st.header("Simulate Block Reception")
-    st.markdown("Post a raw JSON block directly to a node's `/blocks` endpoint to simulate mining or test invalid blocks.")
+    st.header("Simulate Attack (Direct Block Injection)")
+    st.markdown("Create a valid block with random transactions to test if the node accepts it. The UI acts as a malicious miner, signs fake transactions, calculates the Proof of Work, and injects the block directly.")
     
     col_target, col_empty = st.columns([1, 1])
     with col_target:
-        target_node_block = st.selectbox("Select Target Node for Block", list(NODES.keys()), key="simulate_block_target")
+        target_node_block = st.selectbox("Select Target Node for Attack", list(NODES.keys()), key="simulate_attack_target")
+        private_key = st.text_input("Attacker Private Key (Hex)", type="password", help="Required to sign the injected fake transactions")
+        num_transactions = st.number_input("Number of Fake TXs", min_value=1, max_value=10, value=2)
     
-    default_block = {
-        "index": 1,
-        "previous_hash": "0",
-        "timestamp": str(datetime.now()),
-        "transactions": [],
-        "nonce": 0,
-        "hash": "0000"
-    }
-    
-    block_json_str = st.text_area("Block JSON", value=json.dumps(default_block, indent=2), height=300)
-    
-    if st.button("POST Block"):
-        try:
-            block_data = json.loads(block_json_str)
-            with st.spinner("Posting block..."):
-                response = requests.post(f"{NODES[target_node_block]}/blocks", json=block_data, timeout=5)
-                response.raise_for_status()
-                st.success("Block posted successfully!")
-                st.json(response.json())
-        except Exception as e:
-            st.error(f"Error posting block: {e}")
-            if hasattr(e, "response") and e.response is not None:
-                try:
-                    st.error(f"Server response: {e.response.json()}")
-                except Exception:
-                    st.error(f"Server response text: {e.response.text}")
-                    if result:
-                        st.success("Transaction broadcasted successfully!", icon="✅")
-                        st.balloons()
-                        st.json(result)
+    if st.button("Generate, Mine & Inject Block 💥", use_container_width=True):
+        if not private_key:
+            st.error("Private Key is required to sign the fake transactions! (Use the same generated key for the system)")
+        else:
+            node_url = NODES[target_node_block]
+            
+            with st.spinner("Fetching current chain state..."):
+                blocks = get_blocks(node_url)
+                
+            if blocks is None:
+                st.error("Target node is offline or unreachable.")
+            else:
+                last_block = blocks[-1] if blocks else None
+                index = last_block["index"] + 1 if last_block else 1
+                previous_hash = last_block["hash"] if last_block else "0"
+                
+                # 1. Generate Fake Signed Transactions
+                fake_transactions = []
+                for i in range(num_transactions):
+                    payload = {
+                        "person_name": f"Hacker {i+1}",
+                        "person_email": f"hacker{i+1}@darknet.xyz",
+                        "course": "Advanced Blockchain Exploitation",
+                        "certification_date": str(datetime.now().date()),
+                        "institution": "Dark Web Academy",
+                    }
+                    signed_tx = sign_transaction(payload, private_key)
+                    if signed_tx:
+                        fake_transactions.append(signed_tx)
+                
+                if len(fake_transactions) > 0:
+                    # 2. Mine the block on the UI
+                    with st.spinner(f"Mining Attack Block (Index: {index}) on UI..."):
+                        nonce = 0
+                        import hashlib
+                        difficulty = 4  # System difficulty (from config)
+                        
+                        while True:
+                            timestamp_str = str(datetime.now())
+                            data = json.dumps(
+                                {
+                                    "index": index,
+                                    "timestamp": timestamp_str,
+                                    "transactions": fake_transactions,
+                                    "previous_hash": previous_hash,
+                                    "nonce": nonce,
+                                },
+                                sort_keys=True,
+                                default=str,
+                            )
+                            hash_val = hashlib.sha256(data.encode()).hexdigest()
+                            if hash_val.startswith("0" * difficulty):
+                                break
+                            nonce += 1
+                            
+                        attack_block = {
+                            "index": index,
+                            "timestamp": timestamp_str,
+                            "transactions": fake_transactions,
+                            "previous_hash": previous_hash,
+                            "nonce": nonce,
+                            "hash": hash_val
+                        }
+                    
+                    st.success(f"Block Successfully Mined! Nonce: {nonce}, Hash: {hash_val}")
+                    with st.expander("View Mined Attack Block", expanded=False):
+                        st.json(attack_block)
+                    
+                    # 3. Post to Node
+                    with st.spinner(f"Injecting Block to {target_node_block}..."):
+                        try:
+                            response = requests.post(f"{node_url}/blocks", json=attack_block, timeout=5)
+                            response.raise_for_status()
+                            st.success("Attack successful! Block posted and accepted by the node.")
+                            st.json(response.json())
+                            st.balloons()
+                        except Exception as e:
+                            st.error(f"Error posting attack block: {e}")
+                            if hasattr(e, "response") and e.response is not None:
+                                try:
+                                    st.error(f"Server response: {e.response.json()}")
+                                except Exception:
+                                    st.error(f"Server response text: {e.response.text}")

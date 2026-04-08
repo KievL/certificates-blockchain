@@ -52,10 +52,6 @@ class ReceiveBlock:
             )
             return
 
-        if not self._validate_transactions_in_mempool(block):
-            logger.warning(f"Block {block.index} rejected: transactions not in mempool")
-            return
-
         if not self._validate_transaction_signatures(block):
             logger.warning(
                 f"Block {block.index} rejected: invalid transaction signatures"
@@ -69,10 +65,6 @@ class ReceiveBlock:
 
         if block.previous_hash == expected_prev_hash:
             # Normal case: block extends the current chain
-            if not self._validate_timestamp(block, last_block):
-                logger.warning(f"Block {block.index} rejected: invalid timestamp")
-                return
-
             self._accept_block(block)
             logger.info(f"Block {block.index} accepted into chain")
         else:
@@ -102,11 +94,6 @@ class ReceiveBlock:
         """Check that the hash meets the difficulty requirement."""
         return block.is_hash_valid(self.difficulty)
 
-    def _validate_timestamp(self, block: Block, previous_block: Block | None) -> bool:
-        """Ensure the block's timestamp is strictly after the previous block's."""
-        if previous_block is None:
-            return True
-        return block.timestamp > previous_block.timestamp
 
     def _validate_transactions_in_mempool(self, block: Block) -> bool:
         """Verify that every transaction in the block exists in the mempool."""
@@ -300,10 +287,14 @@ class ReceiveBlock:
             logger.info("Peer chains are not equal — keeping current chain")
             return
 
-        if len(chain_a) > len(my_chain):
+        my_chain_equals_peer = len(my_chain) == len(chain_a) and all(
+            m.hash == a.hash for m, a in zip(my_chain, chain_a)
+        )
+
+        if not my_chain_equals_peer:
             logger.info(
-                f"Peers have a longer chain ({len(chain_a)} > {len(my_chain)}) "
-                "and agree — adopting their chain"
+                f"Peers agree on a chain that differs from ours. "
+                "Adopting the majority chain unconditionally."
             )
             # Return exclusive txs from our discarded blocks to the mempool
             fork_point = self._find_fork_point(my_chain, chain_a)
@@ -313,7 +304,4 @@ class ReceiveBlock:
             self.block_repository.replace_chain(chain_a)
             self.mining_block_repository.clear()
         else:
-            logger.info(
-                f"Our chain is same length or longer "
-                f"({len(my_chain)} >= {len(chain_a)}) — keeping current"
-            )
+            logger.info("Our chain matches the network majority — keeping current")
