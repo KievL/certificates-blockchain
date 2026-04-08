@@ -31,6 +31,7 @@ from src.use_cases.upload_transaction import UploadTransaction
 from src.use_cases.list_blocks import ListBlocks
 from src.use_cases.list_transactions import ListTransactions
 from src.use_cases.mining_job_service import MiningJobService
+from src.use_cases.receive_block import ReceiveBlock
 
 
 
@@ -64,6 +65,16 @@ upload_transaction_use_case = UploadTransaction(
 )
 list_blocks_use_case = ListBlocks(repository=block_repository)
 list_transactions_use_case = ListTransactions(repository=transaction_repository)
+
+receive_block_use_case = ReceiveBlock(
+    block_repository=block_repository,
+    transaction_repository=transaction_repository,
+    mining_block_repository=mining_block_repository,
+    node_client=node_client,
+    peer_urls=settings.PEER_URLS,
+    difficulty=settings.DIFFICULTY,
+    public_key=settings.PUBLIC_KEY,
+)
 
 transaction_consumer = TransactionConsumer(
     transaction_repository=transaction_repository,
@@ -132,6 +143,15 @@ async def upload_transaction(request: TransactionRequest):
         return await upload_transaction_use_case.execute(
             request.to_domain(), settings.TRANSACTIONS_TOPIC
         )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/blocks")
+async def receive_block_endpoint(block: Block):
+    try:
+        await receive_block_use_case.execute(block)
+        return {"status": "Block processing initiated. Check node logs for result."}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
