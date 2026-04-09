@@ -123,9 +123,9 @@ def send_transaction(url: str, tx_dict: dict):
         return None
 
 
-def sign_transaction(payload: dict, private_key_hex: str) -> dict | None:
-    tx_id = str(uuid.uuid4())
-    timestamp_str = str(datetime.now())
+def sign_transaction(payload: dict, private_key_hex: str, force_id: str | None = None, force_timestamp: str | None = None) -> dict | None:
+    tx_id = force_id or str(uuid.uuid4())
+    timestamp_str = force_timestamp or str(datetime.now())
 
     signable_dict = {
         "id": tx_id,
@@ -150,7 +150,7 @@ def sign_transaction(payload: dict, private_key_hex: str) -> dict | None:
 # --- MAIN UI ---
 st.title("🌐 Multi-Node Certificate Blockchain Explorer")
 
-tab1, tab2, tab3 = st.tabs(["📊 Ledger Visualization", "Send Transaction", "🛠️ Simulate Block"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Ledger Visualization", "Send Transaction", "🛠️ Simulate Attack", "🎲 Random TXs"])
 
 # --- TAB 1: LEDGER VISUALIZATION ---
 with tab1:
@@ -238,10 +238,11 @@ with tab3:
         target_node_block = st.selectbox("Select Target Node for Attack", list(NODES.keys()), key="simulate_attack_target")
         private_key = st.text_input("Attacker Private Key (Hex)", type="password", help="Required to sign the injected fake transactions")
         num_transactions = st.number_input("Number of Fake TXs", min_value=1, max_value=10, value=2)
+        force_accept = st.checkbox("Force Accept (Bypass Signature Validation)", value=False, help="Injects the force_accept=True flag into the block telling the node to ignore fake signatures.")
     
     if st.button("Generate, Mine & Inject Block 💥", use_container_width=True):
-        if not private_key:
-            st.error("Private Key is required to sign the fake transactions! (Use the same generated key for the system)")
+        if not private_key and not force_accept:
+            st.error("Private Key is required to sign the fake transactions! (Unless you check Force Accept)")
         else:
             node_url = NODES[target_node_block]
             
@@ -300,7 +301,8 @@ with tab3:
                             "transactions": fake_transactions,
                             "previous_hash": previous_hash,
                             "nonce": nonce,
-                            "hash": hash_val
+                            "hash": hash_val,
+                            "force_accept": force_accept
                         }
                     
                     st.success(f"Block Successfully Mined! Nonce: {nonce}, Hash: {hash_val}")
@@ -322,3 +324,66 @@ with tab3:
                                     st.error(f"Server response: {e.response.json()}")
                                 except Exception:
                                     st.error(f"Server response text: {e.response.text}")
+
+# --- TAB 4: RANDOM TXs ---
+with tab4:
+    st.header("Send Random Transactions")
+    st.markdown("Generate and send a batch of random (but deterministic via SEED) transactions to a specific node.")
+    
+    col_target_random, col_empty_random = st.columns([1, 1])
+    with col_target_random:
+        target_node_random = st.selectbox("Select Target Node", list(NODES.keys()), key="random_tx_target")
+        private_key_random = st.text_input("Private Key (Hex)", type="password", key="random_tx_pk", help="Required to sign the transactions")
+        num_txs = st.number_input("Number of Transactions", min_value=1, max_value=50, value=5)
+        seed_value = st.number_input("Random SEED", value=42, help="Used for deterministic randomness. The same seed produces the exact same transactions!")
+    
+    if st.button("Generate & Send Transactions 🚀", use_container_width=True):
+        if not private_key_random:
+            st.error("Private Key is required to sign the transactions!")
+        else:
+            import random
+            
+            # Use seed to guarantee reproducibility
+            random.seed(seed_value)
+            
+            courses = ["Sistemas Distribuídos", "Redes de Computadores", "Engenharia de Software", "Banco de Dados", "Inteligência Artificial"]
+            institutions = ["UFRN", "USP", "UNICAMP", "UFC", "UFPE"]
+            domains = ["gmail.com", "ufrn.edu.br", "hotmail.com", "yahoo.com"]
+            
+            node_url = NODES[target_node_random]
+            success_count = 0
+            
+            with st.spinner(f"Generating and sending {num_txs} transactions..."):
+                for i in range(num_txs):
+                    # Generate deterministic random data based on seed
+                    random_id = random.randint(1000, 9999)
+                    
+                    payload = {
+                        "person_name": f"Student {random_id}",
+                        "person_email": f"student{random_id}@{random.choice(domains)}",
+                        "course": random.choice(courses),
+                        "certification_date": f"2026-{random.randint(1,12):02d}-{random.randint(1,28):02d}",
+                        "institution": random.choice(institutions),
+                    }
+                    
+                    # Make ID and timestamp deterministic based on the seed sequence
+                    det_id = str(uuid.UUID(int=random.getrandbits(128), version=4))
+                    det_ts = f"2026-04-08 12:00:{random.randint(0,59):02d}.123456"
+                    
+                    tx_dict = sign_transaction(payload, private_key_random, force_id=det_id, force_timestamp=det_ts)
+                    if tx_dict:
+                        result = send_transaction(node_url, tx_dict)
+                        if result:
+                            success_count += 1
+            
+            if success_count == num_txs:
+                st.success(f"Successfully sent all {success_count} transactions to {target_node_random}!")
+                st.balloons()
+            elif success_count > 0:
+                st.warning(f"Sent {success_count}/{num_txs} transactions successfully.")
+            else:
+                st.error("Failed to send transactions.")
+            
+            # Reset seed to avoid affecting other parts of the script
+            random.seed()
+

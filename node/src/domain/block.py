@@ -14,6 +14,7 @@ class Block(BaseModel):
     previous_hash: str
     nonce: int = 0
     hash: str = ""
+    force_accept: bool = False
 
     def compute_hash(self) -> str:
         """Recompute the SHA-256 hash for this block (same logic as the miner)."""

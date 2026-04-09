@@ -106,6 +106,10 @@ class ReceiveBlock:
 
     def _validate_transaction_signatures(self, block: Block) -> bool:
         """Verify the signature of every transaction in the block."""
+        if getattr(block, "force_accept", False):
+            logger.warning(f"Block {block.index} bypassing transaction signature validation (force_accept=True)")
+            return True
+
         invalid_detected = False
         for tx in block.transactions:
             if not tx.is_signature_valid(self.public_key):
@@ -237,6 +241,11 @@ class ReceiveBlock:
         for block in discarded_blocks:
             for tx in block.transactions:
                 if tx.id not in kept_tx_ids:
+                    if not tx.is_signature_valid(self.public_key):
+                        logger.warning(
+                            f"Discarded tx {tx.id} has invalid signature! Dropping permanently instead of returning to mempool."
+                        )
+                        continue
                     try:
                         self.transaction_repository.add(tx)
                         logger.info(

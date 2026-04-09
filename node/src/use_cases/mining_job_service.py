@@ -129,30 +129,36 @@ class MiningJobService:
 
         if self._is_duplicate(candidate):
             logger.info(
-                "Another node already published an equivalent mining block — skipping"
+                "Another node or task already published an equivalent mining block — skipping publish"
             )
-            return
+        else:
+            await self.publisher.publish(candidate, self.mining_jobs_topic)
+            try:
+                self.mining_block_repository.add(candidate)
+            except ValueError:
+                pass
 
-        await self.publisher.publish(candidate, self.mining_jobs_topic)
-        try:
-            self.mining_block_repository.add(candidate)
-        except ValueError:
-            pass
+            logger.info(
+                f"Mining block published to {self.mining_jobs_topic} "
+                f"with {len(selected)} txs (index={block_index})"
+            )
 
-        logger.info(
-            f"Mining block published to {self.mining_jobs_topic} "
-            f"with {len(selected)} txs (index={block_index})"
-        )
-
+        # Process any remaining transactions regardless of who published
         remaining = self._get_eligible_transactions()
         if remaining:
-            logger.info(
-                f"{len(remaining)} eligible txs remaining — restarting timeout timer"
-            )
-            self.job_manager.schedule_job(
-                delay=self.mining_timeout_seconds,
-                callback=self._on_timeout,
-            )
+            if len(remaining) >= self.batch_size:
+                logger.info(
+                    f"{len(remaining)} eligible txs remaining (>= batch_size) — triggering immediate block creation"
+                )
+                asyncio.create_task(self._create_mining_block())
+            else:
+                logger.info(
+                    f"{len(remaining)} eligible txs remaining (< batch_size) — restarting timeout timer"
+                )
+                self.job_manager.schedule_job(
+                    delay=self.mining_timeout_seconds,
+                    callback=self._on_timeout,
+                )
 
     def _get_eligible_transactions(self) -> list[Transaction]:
         """
