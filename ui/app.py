@@ -122,6 +122,16 @@ def send_transaction(url: str, tx_dict: dict):
                 pass
         return None
 
+def check_transaction(url: str, tx_id: str):
+    try:
+        response = requests.get(f"{url}/transactions/{tx_id}", timeout=3)
+        if response.status_code == 200:
+            return response.json()
+        elif response.status_code == 404:
+            return None
+    except Exception:
+        return {"error": "Connection failed"}
+
 
 def sign_transaction(payload: dict, private_key_hex: str, force_id: str | None = None, force_timestamp: str | None = None) -> dict | None:
     tx_id = force_id or str(uuid.uuid4())
@@ -150,7 +160,7 @@ def sign_transaction(payload: dict, private_key_hex: str, force_id: str | None =
 # --- MAIN UI ---
 st.title("🌐 Multi-Node Certificate Blockchain Explorer")
 
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Ledger Visualization", "Send Transaction", "🛠️ Simulate Attack", "🎲 Random TXs"])
+tab1, tab_verify, tab2, tab3, tab4 = st.tabs(["📊 Ledger Visualization", "🔍 Verify Certificate", "Send Transaction", "🛠️ Simulate Attack", "🎲 Random TXs"])
 
 # --- TAB 1: LEDGER VISUALIZATION ---
 with tab1:
@@ -227,6 +237,37 @@ with tab2:
                     node_url = NODES[target_node]
                     with st.spinner(f"Broadcasting to {target_node}..."):
                         result = send_transaction(node_url, tx_dict)
+
+# --- TAB: VERIFY CERTIFICATE ---
+with tab_verify:
+    st.header("Verify Certificate")
+    st.markdown("Enter a Certificate Transaction Hash/ID to check its validity and status in the blockchain.")
+    
+    col_v1, col_v2 = st.columns([1, 1])
+    with col_v1:
+        verify_node = st.selectbox("Select Node to Query", list(NODES.keys()), key="verify_target_node")
+        tx_hash_input = st.text_input("Transaction Hash / ID", placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000")
+        
+    if st.button("Verify Certificate 🔍", use_container_width=True):
+        if not tx_hash_input:
+            st.error("Please enter a Transaction Hash to verify.")
+        else:
+            node_url = NODES[verify_node]
+            with st.spinner("Querying blockchain..."):
+                result = check_transaction(node_url, tx_hash_input.strip())
+                
+            if result is None:
+                st.error("❌ Certificate NOT FOUND in this node's mempool or blockchain.")
+            elif "error" in result:
+                st.error("⚠️ Failed to connect to the node.")
+            else:
+                if result["status"] == "confirmed":
+                    st.success(f"✅ Certificate FOUND and CONFIRMED in Block {result['block_index']}!")
+                else:
+                    st.info("🕒 Certificate found in MEMPOOL (Waiting to be mined...)")
+                
+                with st.expander("Certificate Details", expanded=True):
+                    st.json(result["transaction"])
 
 # --- TAB 3: SIMULATE ATTACK ---
 with tab3:

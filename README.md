@@ -33,7 +33,7 @@ A solução é composta por quatro componentes principais:
 | **Blockchain Node** | Python (FastAPI) | Mantém a chain, gerencia a mempool, valida blocos e resolve forks. |
 | **Miner** | Python (Asyncio) | Escuta por jobs de mineração e realiza o esforço computacional (PoW). |
 | **Message Broker** | Kafka (KRaft mode) | Garante a entrega de mensagens e eventos entre todos os nós e mineradores. |
-| **Web UI** | Streamlit | Interface amigável para visualizar a blockchain, enviar transações e monitorar nós. |
+| **Web UI** | Streamlit (Modern Glassmorphism Design) | Interface premium para visualizar a blockchain, enviar transações, verificar certificados e simular ataques. |
 | **Kafka UI** | Provectus UI | Monitoramento técnico dos tópicos e mensagens trafegando no broker. |
 
 ## 🚀 Como Executar
@@ -50,7 +50,7 @@ A solução é composta por quatro componentes principais:
    ```
 
 2. **Subir a Infraestrutura**:
-   Utilize o Docker Compose para subir 3 nós de blockchain, 3 mineradores e a infraestrutura Kafka:
+   Utilize o Docker Compose para subir 3 nós de blockchain, 3 mineradores e a infraestrutura Kafka (KRaft):
    ```bash
    docker compose up --build
    ```
@@ -60,14 +60,33 @@ A solução é composta por quatro componentes principais:
    - **FastAPI Docs**: `http://localhost:8001/docs` (Node 1), `8002` (Node 2), etc.
    - **Kafka UI**: `http://localhost:8080` (verificação de mensagens).
 
+## 🛡️ Funcionalidades de Teste e Simulação
+
+O projeto inclui ferramentas avançadas para testar a resiliência e o comportamento da rede em cenários adversos:
+
+### 🔍 Verificação de Certificados
+Uma aba dedicada permite consultar qualquer nó da rede por um ID/Hash de transação, retornando o status em tempo real (Confirmado em Bloco ou Pendente na Mempool) e os dados detalhados do certificado.
+
+### 💥 Simulação de Ataque (Injeção Direta de Blocos)
+Esta ferramenta permite que a UI atue como um "minerador malicioso":
+1.  Busca o estado atual da chain de um nó alvo.
+2.  Gera transações arbitrárias (falsas).
+3.  Realiza o esforço computacional (PoW) diretamente no navegador.
+4.  Injeta o bloco minerado via endpoint HTTP, testando a capacidade do nó de validar e propagar blocos que não vieram do pipeline padrão do Kafka.
+5.  **Force Accept**: Opção para testar o comportamento do nó ignorando validações de assinatura (modo debug).
+
+### 🎲 Gerador de Transações Aleatórias
+Permite enviar lotes de transações para a rede com dados gerados aleatoriamente. Utiliza um **SEED de aleatoriedade** para garantir que os testes sejam reproduzíveis.
+
 ## ⚙️ Detalhes Técnicos
 
-- **Consenço**: Proof of Work com dificuldade variável configurada via variável de ambiente (`DIFFICULTY`).
+- **Consenso**: Proof of Work com dificuldade variável configurada via variável de ambiente (`DIFFICULTY`).
 - **Resolução de Conflitos**: Regra da Cadeia Mais Longa (*Longest Chain Rule*). Em caso de empate, um protocolo de consenso aleatório é acionado consultando outros nós.
 - **Estratégia de Mineração**:
     - **Batching**: Blocos são criados ao atingir `BATCH_SIZE` transações ou um `TIMEOUT`.
     - **Jitter Strategy**: Adição de atraso aleatório antes da publicação para reduzir colisões e forks e simular condições reais de rede.
-    - **Validação Rigorosa**: Verificação de hashes anteriores, timestamps, nonces e assinaturas criptográficas.
+    - **Validação Rigorosa**: Verificação de hashes anteriores, timestamps, nonces e assinaturas criptográficas Ed25519.
+- **Segurança**: Assinaturas de transação validadas em cada etapa. Blocos injetados com `force_accept=True` são aceitos apenas se a lógica do nó permitir explicitamente (útil para simulações de "ataque de 51%" ou "by-pass").
 
 ---
 *Desenvolvido como trabalho acadêmico para a disciplina de Sistemas Distribuídos - DCA/UFRN.*

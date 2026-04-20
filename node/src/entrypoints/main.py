@@ -166,6 +166,22 @@ async def list_transactions():
     return list_transactions_use_case.execute()
 
 
+@app.get("/transactions/{tx_id}")
+async def get_transaction(tx_id: str):
+    # Check mempool
+    for tx in transaction_repository.list():
+        if tx.id == tx_id:
+            return {"status": "in_mempool", "transaction": tx}
+            
+    # Check chain
+    for block in block_repository.get_chain():
+        for tx in block.transactions:
+            if tx.id == tx_id:
+                return {"status": "confirmed", "block_index": block.index, "transaction": tx}
+                
+    raise HTTPException(status_code=404, detail="Transaction not found")
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "node_id": settings.NODE_ID}
